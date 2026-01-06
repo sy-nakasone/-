@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ドラえもん おみくじ</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="header">
+        <h1 class="title">ドラえもん おみくじ</h1>
+        <p class="subtitle">ボタンを押すと、キャラクターおみくじが引けます。</p>
+      </header>
+
+      <section class="card" aria-label="おみくじ結果">
+        <div class="result">
+          <div class="result__fortune" id="fortune">—</div>
+          <div class="result__name" id="character">—</div>
+        </div>
+        <p class="hint" id="hint">「おみくじを引く」を押してください。</p>
+      </section>
+
+      <div class="actions">
+        <button class="button" id="drawButton" type="button">おみくじを引く</button>
+        <button class="button button--secondary" id="resetButton" type="button">リセット</button>
+      </div>
+
+      <details class="details">
+        <summary>対応表（固定）</summary>
+        <ul class="mapping" id="mapping"></ul>
+      </details>
+    </main>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>

@@ -27,7 +27,7 @@
             padding: 40px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             text-align: center;
-            max-width: 400px;
+            max-width: 450px;
             width: 100%;
         }
 
@@ -43,17 +43,238 @@
         }
 
         .result-area {
-            min-height: 300px;
+            min-height: 350px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
         }
 
-        .character {
-            font-size: 100px;
-            margin-bottom: 20px;
+        /* キャラクター共通スタイル */
+        .character-face {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            position: relative;
+            margin: 0 auto 20px;
             animation: bounce 0.5s ease;
+        }
+
+        /* ドラえもん - 青い猫型ロボット */
+        .doraemon {
+            background: #00A0E9;
+            border: 4px solid #00A0E9;
+        }
+        .doraemon::before {
+            content: '';
+            position: absolute;
+            width: 90px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .doraemon::after {
+            content: '◉ ◉';
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            color: #333;
+            letter-spacing: 5px;
+        }
+        .doraemon .nose {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #E60012;
+            border-radius: 50%;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+        }
+        .doraemon .whiskers {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 30px;
+            z-index: 5;
+        }
+        .doraemon .whiskers::before {
+            content: '〰  〰';
+            font-size: 14px;
+            color: #333;
+        }
+        .doraemon .bell {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+        }
+
+        /* のび太 - メガネの男の子 */
+        .nobita {
+            background: #FFE4C4;
+            border: 4px solid #DEB887;
+        }
+        .nobita::before {
+            content: '👓';
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 50px;
+        }
+        .nobita::after {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 20px;
+            width: 80px;
+            height: 40px;
+            background: #333;
+            border-radius: 50% 50% 0 0;
+        }
+        .nobita .mouth {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+        }
+
+        /* しずか - リボンの女の子 */
+        .shizuka {
+            background: #FFE4C4;
+            border: 4px solid #DEB887;
+        }
+        .shizuka::before {
+            content: '🎀';
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 35px;
+        }
+        .shizuka::after {
+            content: '◕‿◕';
+            position: absolute;
+            top: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 28px;
+            color: #333;
+        }
+        .shizuka .hair {
+            position: absolute;
+            top: 0;
+            left: -10px;
+            width: 140px;
+            height: 70px;
+            background: #8B4513;
+            border-radius: 70px 70px 0 0;
+            z-index: -1;
+        }
+        .shizuka .blush {
+            position: absolute;
+            bottom: 35px;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            color: #FFB6C1;
+            letter-spacing: 50px;
+            padding-left: 25px;
+        }
+
+        /* スネ夫 - 特徴的な髪型 */
+        .suneo {
+            background: #FFE4C4;
+            border: 4px solid #DEB887;
+        }
+        .suneo::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            left: 30px;
+            width: 0;
+            height: 0;
+            border-left: 30px solid transparent;
+            border-right: 30px solid transparent;
+            border-bottom: 50px solid #333;
+        }
+        .suneo::after {
+            content: '😏';
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 50px;
+            background: #FFE4C4;
+            border-radius: 50%;
+        }
+
+        /* ジャイアン - がっしり体型 */
+        .gian {
+            background: #DEB887;
+            border: 4px solid #CD853F;
+            width: 130px;
+            height: 130px;
+        }
+        .gian::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 25px;
+            width: 80px;
+            height: 30px;
+            background: #333;
+            border-radius: 10px 10px 0 0;
+        }
+        .gian::after {
+            content: '😤';
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 55px;
+        }
+
+        /* 先生 - メガネの大人 */
+        .sensei {
+            background: #FFE4C4;
+            border: 4px solid #DEB887;
+        }
+        .sensei::before {
+            content: '🤓';
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 55px;
+        }
+        .sensei::after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 30px;
+            width: 60px;
+            height: 25px;
+            background: #333;
+            border-radius: 5px;
+        }
+        .sensei .tie {
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 25px;
         }
 
         .character-name {
@@ -80,12 +301,12 @@
             border-radius: 10px;
         }
 
-        .fortune-daikichi { color: #FFD700; background: linear-gradient(135deg, #FFF8DC, #FFFACD); }
-        .fortune-chukichi { color: #FF6B6B; background: linear-gradient(135deg, #FFE4E1, #FFF0F5); }
-        .fortune-kichi { color: #FF69B4; background: linear-gradient(135deg, #FFF0F5, #FFE4E1); }
-        .fortune-shokichi { color: #4169E1; background: linear-gradient(135deg, #E6E6FA, #F0F8FF); }
-        .fortune-kyo { color: #8B4513; background: linear-gradient(135deg, #F5DEB3, #FFE4C4); }
-        .fortune-daikyo { color: #4B0082; background: linear-gradient(135deg, #E6E6FA, #DDA0DD); }
+        .fortune-daikichi { color: #FFD700; background: linear-gradient(135deg, #FFF8DC, #FFFACD); border: 2px solid #FFD700; }
+        .fortune-chukichi { color: #FF6B6B; background: linear-gradient(135deg, #FFE4E1, #FFF0F5); border: 2px solid #FF6B6B; }
+        .fortune-kichi { color: #FF69B4; background: linear-gradient(135deg, #FFF0F5, #FFE4E1); border: 2px solid #FF69B4; }
+        .fortune-shokichi { color: #4169E1; background: linear-gradient(135deg, #E6E6FA, #F0F8FF); border: 2px solid #4169E1; }
+        .fortune-kyo { color: #8B4513; background: linear-gradient(135deg, #F5DEB3, #FFE4C4); border: 2px solid #8B4513; }
+        .fortune-daikyo { color: #4B0082; background: linear-gradient(135deg, #E6E6FA, #DDA0DD); border: 2px solid #4B0082; }
 
         .draw-button {
             background: linear-gradient(135deg, #FF6B6B, #FF8E53);
@@ -97,6 +318,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+            margin-top: 20px;
         }
 
         .draw-button:hover {
@@ -116,7 +338,7 @@
         .initial-icon {
             font-size: 80px;
             margin-bottom: 20px;
-            opacity: 0.5;
+            opacity: 0.7;
         }
 
         @keyframes bounce {
@@ -132,6 +354,16 @@
         .fade-in {
             animation: fadeIn 0.5s ease;
         }
+
+        @keyframes shake {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-10deg); }
+            75% { transform: rotate(10deg); }
+        }
+
+        .shaking {
+            animation: shake 0.3s ease 3;
+        }
     </style>
 </head>
 <body>
@@ -140,74 +372,95 @@
         <p class="subtitle">ボタンを押して今日の運勢を占おう！</p>
         
         <div class="result-area" id="resultArea">
-            <div class="initial-icon">🔮</div>
+            <div class="initial-icon">🎋</div>
             <p class="initial-message">おみくじを引いてね！</p>
         </div>
         
-        <button class="draw-button" onclick="drawOmikuji()">おみくじを引く</button>
+        <button class="draw-button" id="drawBtn" onclick="drawOmikuji()">おみくじを引く</button>
     </div>
 
     <script>
         const fortunes = [
             {
-                character: "🤖",
+                characterClass: "doraemon",
                 name: "ドラえもん",
                 fortune: "大吉",
-                class: "fortune-daikichi",
-                message: "すばらしい一日になるよ！ひみつ道具のように、あなたの可能性は無限大だ！"
+                fortuneClass: "fortune-daikichi",
+                message: "すばらしい一日になるよ！ひみつ道具のように、あなたの可能性は無限大だ！",
+                extras: '<div class="nose"></div><div class="whiskers"></div><div class="bell">🔔</div>'
             },
             {
-                character: "👦",
+                characterClass: "nobita",
                 name: "のび太",
                 fortune: "中吉",
-                class: "fortune-chukichi",
-                message: "のんびりいこう！失敗しても大丈夫、きっとうまくいくよ！"
+                fortuneClass: "fortune-chukichi",
+                message: "のんびりいこう！失敗しても大丈夫、きっとうまくいくよ！",
+                extras: '<div class="mouth">▽</div>'
             },
             {
-                character: "👧",
-                name: "しずか",
+                characterClass: "shizuka",
+                name: "しずかちゃん",
                 fortune: "吉",
-                class: "fortune-kichi",
-                message: "優しい心を持ち続けて。良いことが起こる予感がするわ！"
+                fortuneClass: "fortune-kichi",
+                message: "優しい心を持ち続けて。良いことが起こる予感がするわ♪",
+                extras: '<div class="hair"></div><div class="blush">● ●</div>'
             },
             {
-                character: "😏",
+                characterClass: "suneo",
                 name: "スネ夫",
                 fortune: "小吉",
-                class: "fortune-shokichi",
-                message: "小さな幸せを見つけよう。自慢できることがきっとあるはずだよ！"
+                fortuneClass: "fortune-shokichi",
+                message: "小さな幸せを見つけよう。自慢できることがきっとあるはずだよ！",
+                extras: ''
             },
             {
-                character: "💪",
+                characterClass: "gian",
                 name: "ジャイアン",
                 fortune: "凶",
-                class: "fortune-kyo",
-                message: "今日は控えめに過ごそう。心の歌を歌えば元気が出るぞ！"
+                fortuneClass: "fortune-kyo",
+                message: "おれの物はおれの物！...今日は控えめに過ごそう。心の歌を歌えば元気が出るぞ！",
+                extras: ''
             },
             {
-                character: "👨‍🏫",
+                characterClass: "sensei",
                 name: "先生",
                 fortune: "大凶",
-                class: "fortune-daikyo",
-                message: "廊下に立ってなさい！...でも大丈夫、明日はきっと良い日になる！"
+                fortuneClass: "fortune-daikyo",
+                message: "廊下に立ってなさい！...でも大丈夫、明日はきっと良い日になりますよ。",
+                extras: '<div class="tie">👔</div>'
             }
         ];
 
         function drawOmikuji() {
             const resultArea = document.getElementById('resultArea');
+            const btn = document.getElementById('drawBtn');
             
-            // ランダムに選ぶ
-            const result = fortunes[Math.floor(Math.random() * fortunes.length)];
+            // ボタンを一時的に無効化
+            btn.disabled = true;
+            btn.textContent = '占い中...';
             
-            // 結果を表示
-            resultArea.innerHTML = `
-                <div class="fade-in">
-                    <div class="character">${result.character}</div>
-                    <div class="character-name">${result.name}</div>
-                    <div class="fortune ${result.class}">${result.fortune}</div>
-                    <div class="message">${result.message}</div>
-                </div>
-            `;
+            // シャッフルアニメーション
+            resultArea.innerHTML = '<div class="initial-icon shaking">🎋</div><p class="initial-message">運勢を占っています...</p>';
+            
+            setTimeout(() => {
+                // ランダムに選ぶ
+                const result = fortunes[Math.floor(Math.random() * fortunes.length)];
+                
+                // 結果を表示
+                resultArea.innerHTML = `
+                    <div class="fade-in">
+                        <div class="character-face ${result.characterClass}">
+                            ${result.extras}
+                        </div>
+                        <div class="character-name">${result.name}</div>
+                        <div class="fortune ${result.fortuneClass}">${result.fortune}</div>
+                        <div class="message">${result.message}</div>
+                    </div>
+                `;
+                
+                btn.disabled = false;
+                btn.textContent = 'もう一度引く';
+            }, 1000);
         }
     </script>
 </body>

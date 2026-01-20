@@ -9,9 +9,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # 全ファイル（api.pyなど）をコピー
 COPY . .
 
-# ポート設定
+# 起動スクリプトに実行権限を付与
+RUN chmod +x start_api.sh
+
+# ポート設定（Cloud Runが自動設定するが、デフォルト値を設定）
 ENV PORT=8080
 EXPOSE 8080
 
-# gunicornで「工場（API）」を起動
-CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 600 api:app
+# 起動スクリプトを実行
+CMD ["./start_api.sh"]

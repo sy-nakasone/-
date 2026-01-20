@@ -93,6 +93,23 @@ gcloud services enable cloudbuild.googleapis.com run.googleapis.com drive.google
 # APIサーバーをデプロイ
 echo ""
 echo "APIサーバーをデプロイ中..."
+# 一時的にDockerfile.apiをDockerfileにリネーム（--sourceはDockerfileを探すため）
+HAD_ORIGINAL_DOCKERFILE=false
+if [ -f "Dockerfile" ]; then
+    mv Dockerfile Dockerfile.streamlit.backup
+    HAD_ORIGINAL_DOCKERFILE=true
+fi
+cp Dockerfile.api Dockerfile
+
+# エラーが発生してもDockerfileを元に戻すためのtrapを設定
+cleanup_api_dockerfile() {
+    rm -f Dockerfile
+    if [ "$HAD_ORIGINAL_DOCKERFILE" = true ] && [ -f "Dockerfile.streamlit.backup" ]; then
+        mv Dockerfile.streamlit.backup Dockerfile
+    fi
+}
+trap cleanup_api_dockerfile EXIT
+
 gcloud run deploy $API_SERVICE_NAME \
     --source . \
     --region $REGION \
@@ -105,21 +122,71 @@ gcloud run deploy $API_SERVICE_NAME \
     --set-env-vars "CHATWORK_API_TOKEN=$CHATWORK_API_TOKEN" \
     --set-env-vars "CHATWORK_ROOM_ID=$CHATWORK_ROOM_ID"
 
+DEPLOY_API_RESULT=$?
+cleanup_api_dockerfile
+trap - EXIT
+
+if [ $DEPLOY_API_RESULT -ne 0 ]; then
+    echo -e "${RED}APIサーバーのデプロイに失敗しました${NC}"
+    exit 1
+fi
+
+# IAMポリシーを設定（公開アクセスを許可）
+echo "IAMポリシーを設定中..."
+gcloud run services add-iam-policy-binding $API_SERVICE_NAME \
+    --region $REGION \
+    --member="allUsers" \
+    --role="roles/run.invoker" \
+    --quiet || echo "IAMポリシー設定をスキップ（既に設定済みの可能性があります）"
+
 # APIサーバーのURLを取得
 API_URL=$(gcloud run services describe $API_SERVICE_NAME --region $REGION --format 'value(status.url)')
 
 # Streamlitアプリをデプロイ
 echo ""
 echo "Webアプリをデプロイ中..."
+# 一時的にDockerfile.streamlitをDockerfileにリネーム
+HAD_ORIGINAL_DOCKERFILE=false
+if [ -f "Dockerfile" ]; then
+    mv Dockerfile Dockerfile.api.backup
+    HAD_ORIGINAL_DOCKERFILE=true
+fi
+cp Dockerfile.streamlit Dockerfile
+
+# エラーが発生してもDockerfileを元に戻すためのtrapを設定
+cleanup_app_dockerfile() {
+    rm -f Dockerfile
+    if [ "$HAD_ORIGINAL_DOCKERFILE" = true ] && [ -f "Dockerfile.api.backup" ]; then
+        mv Dockerfile.api.backup Dockerfile
+    fi
+}
+trap cleanup_app_dockerfile EXIT
+
 gcloud run deploy $APP_SERVICE_NAME \
     --source . \
-    --dockerfile Dockerfile.streamlit \
     --region $REGION \
     --platform managed \
     --allow-unauthenticated \
     --memory 1Gi \
     --timeout 300 \
     --set-env-vars "API_URL=$API_URL"
+
+DEPLOY_APP_RESULT=$?
+cleanup_app_dockerfile
+trap - EXIT
+
+if [ $DEPLOY_APP_RESULT -ne 0 ]; then
+    echo -e "${RED}Webアプリのデプロイに失敗しました${NC}"
+    exit 1
+fi
+
+# IAMポリシーを設定（公開アクセスを許可）
+echo "IAMポリシーを設定中..."
+gcloud run services add-iam-policy-binding $APP_SERVICE_NAME \
+    --region $REGION \
+    --member="allUsers" \
+    --role="roles/run.invoker" \
+    --quiet || echo "IAMポリシー設定をスキップ（既に設定済みの可能性があります）"
 
 # アプリのURLを取得
 APP_URL=$(gcloud run services describe $APP_SERVICE_NAME --region $REGION --format 'value(status.url)')

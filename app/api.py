@@ -179,7 +179,13 @@ def get_history_from_sheet(limit: int = 100):
 def get_statistics_from_sheet():
     """スプレッドシートから統計を計算"""
     if not CONFIG['SPREADSHEET_ID']:
-        return {'total_count': 0, 'this_month': 0, 'by_department': {}}
+        return {
+            'total_count': 0,
+            'this_month': 0,
+            'completed_count': 0,
+            'by_department': {},
+            'active_folders': 0
+        }
     
     try:
         sheets = get_sheets_service()
@@ -193,7 +199,9 @@ def get_statistics_from_sheet():
         
         total_count = len(rows)
         this_month = 0
+        completed_count = 0
         by_department = {}
+        active_folders = set()
         
         current_month = datetime.now().strftime('%Y-%m')
         
@@ -203,19 +211,35 @@ def get_statistics_from_sheet():
                 if row[0].startswith(current_month):
                     this_month += 1
                 
+                # 完了済みカウント
+                if len(row) >= 5 and row[4] == '完了':
+                    completed_count += 1
+                
                 # 部署別カウント
                 dept = row[1]
                 by_department[dept] = by_department.get(dept, 0) + 1
+                
+                # 使用中のフォルダー
+                if len(row) >= 3 and row[2]:
+                    active_folders.add(row[2])
         
         return {
             'total_count': total_count,
             'this_month': this_month,
-            'by_department': by_department
+            'completed_count': completed_count,
+            'by_department': by_department,
+            'active_folders': len(active_folders)
         }
     
     except Exception as e:
         logger.error(f"統計取得エラー: {e}")
-        return {'total_count': 0, 'this_month': 0, 'by_department': {}}
+        return {
+            'total_count': 0,
+            'this_month': 0,
+            'completed_count': 0,
+            'by_department': {},
+            'active_folders': 0
+        }
 
 
 # ===== Gemini処理 =====

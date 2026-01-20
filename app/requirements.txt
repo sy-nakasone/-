@@ -6,4 +6,5 @@ google-auth
 google-generativeai
 requests
 pandas
+plotly
 gunicorn

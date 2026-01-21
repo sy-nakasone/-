@@ -1,11 +1,10 @@
 """
-会議文字起こしシステム
+会議文字起こしシステム - UI改良版（重複IDエラー修正済み）
 """
 
 import streamlit as st
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
 import os
 import google.auth
 import google.auth.transport.requests
@@ -34,319 +33,219 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ===== カスタムCSS =====
+# ===== カスタムCSS (スタイリッシュなデザイン) =====
 st.markdown("""
 <style>
-    /* ベーススタイル */
-    html, body, [class*="css"] {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
-        background-color: #f8f9fa;
+    /* 背景グラデーション */
+    .stApp {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%) !important;
+        background-size: 400% 400% !important;
+        animation: gradientShift 15s ease infinite !important;
+    }
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
     }
     
-    /* Streamlitのデフォルトスタイルをリセット */
     .main .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-        max-width: 1200px;
+        padding-top: 1.5rem;
+        max-width: 900px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+        padding: 2rem;
     }
     
     /* ヘッダー */
     .gijiroku-header {
-        text-align: left;
-        padding: 2rem 0 1.5rem 0;
-        margin-bottom: 2rem;
-        border-bottom: 1px solid #e0e0e0;
-    }
-    .gijiroku-title {
-        font-size: 2rem;
-        font-weight: 600;
-        color: #1a1a1a;
-        margin: 0;
-        letter-spacing: -0.02em;
-    }
-    .gijiroku-subtitle {
-        font-size: 0.9rem;
-        color: #6b7280;
-        margin: 0.5rem 0 0 0;
-        font-weight: 400;
-    }
-    
-    /* タブナビゲーション */
-    .tab-container {
-        display: flex;
-        gap: 0;
-        margin-bottom: 2rem;
-        background: white;
-        border-radius: 12px;
-        padding: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-    .tab-button {
-        flex: 1;
-        padding: 0.75rem 1.5rem;
-        border: none;
-        background: transparent;
-        color: #6b7280;
-        font-size: 0.95rem;
-        font-weight: 500;
-        cursor: pointer;
-        border-radius: 8px;
-        transition: all 0.2s ease;
-    }
-    .tab-button:hover {
-        background: #f3f4f6;
-        color: #374151;
-    }
-    .tab-button.active {
-        background: #e0f2fe;
-        color: #0369a1;
-        font-weight: 600;
-    }
-    
-    /* カードUI */
-    .card {
-        background: white;
-        border-radius: 16px;
-        padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        margin-bottom: 1.5rem;
-        border: 1px solid #f0f0f0;
-    }
-    .card-title {
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 1rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    
-    /* 設定カード */
-    .setting-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.25rem;
-        margin-bottom: 1rem;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        border: 1px solid #f0f0f0;
-    }
-    .setting-label {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #6b7280;
-        margin-bottom: 0.5rem;
-        display: block;
-    }
-    
-    /* アップロードエリア */
-    .upload-zone {
-        border: 2px dashed #cbd5e1;
-        border-radius: 12px;
-        padding: 3rem 2rem;
         text-align: center;
-        background: #fafbfc;
-        margin: 1.5rem 0;
-        transition: all 0.2s ease;
-    }
-    .upload-zone:hover {
-        border-color: #3b82f6;
-        background: #f0f9ff;
-    }
-    .upload-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        opacity: 0.6;
-    }
-    .upload-text {
-        font-size: 1rem;
-        color: #374151;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
-    }
-    .upload-hint {
-        font-size: 0.875rem;
-        color: #6b7280;
-    }
-    
-    /* ボタン */
-    .primary-button {
-        background: #3b82f6;
+        padding: 2rem 1.5rem;
+        margin-bottom: 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 16px;
         color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 0.875rem 2rem;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 4px rgba(59,130,246,0.2);
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
     }
-    .primary-button:hover {
-        background: #2563eb;
-        box-shadow: 0 4px 8px rgba(59,130,246,0.3);
-        transform: translateY(-1px);
+    .gijiroku-header h1 {
+        margin: 0;
+        font-size: 2.5rem;
+        font-weight: 700;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
     
-    /* 統計カード */
-    .stat-card {
-        background: white;
+    /* カード */
+    .card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
         border-radius: 16px;
         padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-        border: 1px solid #f0f0f0;
-        height: 100%;
+        margin-bottom: 1.5rem;
+        border: 2px solid rgba(102, 126, 234, 0.2);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        transition: all 0.3s ease;
     }
-    .stat-label {
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 0.75rem;
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
     }
-    .stat-value {
-        font-size: 2.25rem;
+    
+    .card-title {
+        font-size: 0.9rem;
         font-weight: 700;
-        color: #1a1a1a;
-        margin: 0.5rem 0;
-        line-height: 1.2;
-    }
-    .stat-change {
-        font-size: 0.875rem;
-        color: #10b981;
-        font-weight: 600;
-        margin-top: 0.5rem;
-    }
-    
-    /* 履歴カード */
-    .history-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.25rem;
+        color: #667eea;
         margin-bottom: 1rem;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        border: 1px solid #f0f0f0;
-        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e0e7ff;
     }
-    .history-card:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        transform: translateY(-1px);
+    
+    /* ナビゲーションボタン */
+    div[data-testid="column"] button {
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        border-radius: 12px !important;
+        transition: all 0.3s ease !important;
+        border: 2px solid transparent !important;
     }
-    .history-file-name {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #1a1a1a;
+    div[data-testid="column"] button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    }
+    
+    /* タブボタン（デフォルト） */
+    div[data-testid="column"] button {
+        background: linear-gradient(135deg, #f8f9ff 0%, #e0e7ff 100%) !important;
+        color: #667eea !important;
+        border: 2px solid #c7d2fe !important;
+    }
+    
+    /* メインボタン（議事録生成） */
+    div.stButton > button[type="primary"],
+    button[data-testid*="execute_gen_btn"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+        border-radius: 12px !important;
+        padding: 0.875rem 2rem !important;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+        border: none !important;
+        transition: all 0.3s ease !important;
+    }
+    div.stButton > button[type="primary"]:hover,
+    button[data-testid*="execute_gen_btn"]:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.5) !important;
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+    }
+    
+    /* 設定ラベル */
+    .setting-label {
+        font-size: 0.85rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #fff9c4 0%, #ffe082 100%);
+        padding: 0.4rem 0.8rem;
+        border-left: 4px solid #ffc107;
         margin-bottom: 0.5rem;
-    }
-    .history-meta {
-        font-size: 0.875rem;
-        color: #6b7280;
-        margin: 0.25rem 0;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .history-meta-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-    .status-badge {
         display: inline-block;
-        padding: 0.25rem 0.75rem;
         border-radius: 6px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-top: 0.5rem;
-    }
-    .status-completed {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-    .status-processing {
-        background: #fef3c7;
-        color: #92400e;
-    }
-    .status-error {
-        background: #fee2e2;
-        color: #991b1b;
-    }
-    .history-link {
-        color: #3b82f6;
-        text-decoration: none;
-        font-size: 0.875rem;
-        font-weight: 500;
-        transition: color 0.2s ease;
-    }
-    .history-link:hover {
-        color: #2563eb;
-        text-decoration: underline;
+        color: #856404;
+        box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
     }
     
-    /* セクションタイトル */
-    .section-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #1a1a1a;
-        margin: 2rem 0 1rem 0;
-    }
-    
-    /* Streamlitコンポーネントのスタイル調整 */
+    /* セレクトボックス */
     .stSelectbox > div > div {
-        background: white;
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%) !important;
+        border-radius: 10px !important;
+        border: 2px solid #c7d2fe !important;
+        transition: all 0.3s ease !important;
     }
     .stSelectbox > div > div:hover {
-        border-color: #3b82f6;
-    }
-    .stFileUploader > div {
-        border: none;
-        background: transparent;
+        border-color: #667eea !important;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2) !important;
     }
     
-    /* Streamlitのデフォルトメッセージを非表示 */
-    .stSuccess, .stError, .stInfo, .stWarning {
-        display: none;
+    /* ファイルアップローダー */
+    .stFileUploader {
+        border: 2px dashed #667eea !important;
+        border-radius: 12px !important;
+        background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%) !important;
+        padding: 2rem !important;
+        transition: all 0.3s ease !important;
+    }
+    .stFileUploader:hover {
+        border-color: #764ba2 !important;
+        background: linear-gradient(135deg, #e0e7ff 0%, #d1d9ff 100%) !important;
     }
     
-    /* サイドバーを非表示 */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* フッター */
-    .footer {
-        text-align: center;
-        padding: 2rem 0;
-        margin-top: 4rem;
-        border-top: 1px solid #e0e0e0;
-        color: #6b7280;
-        font-size: 0.875rem;
+    /* ステータスバッジ */
+    .status-badge {
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-right: 0.5rem;
+    }
+    .status-completed { 
+        background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%);
+        color: #1b5e20;
+        box-shadow: 0 2px 4px rgba(46, 125, 50, 0.2);
+    }
+    .status-error { 
+        background: linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%);
+        color: #b71c1c;
+        box-shadow: 0 2px 4px rgba(198, 40, 40, 0.2);
     }
     
-    /* 空状態 */
-    .empty-state {
-        text-align: center;
-        padding: 3rem 2rem;
-        color: #6b7280;
+    /* リンク */
+    a {
+        color: #667eea !important;
+        font-weight: 600 !important;
+        text-decoration: none !important;
+        transition: all 0.2s ease !important;
     }
-    .empty-state-icon {
-        font-size: 3rem;
-        opacity: 0.4;
-        margin-bottom: 1rem;
+    a:hover {
+        color: #764ba2 !important;
+        text-decoration: underline !important;
+    }
+    
+    /* テーブル */
+    .stTable {
+        background: white !important;
+        border-radius: 12px !important;
+    }
+    
+    /* 警告・成功メッセージ */
+    .stSuccess {
+        background: linear-gradient(135deg, #c8e6c9 0%, #a5d6a7 100%) !important;
+        border-left: 4px solid #4caf50 !important;
+        border-radius: 8px !important;
+    }
+    .stError {
+        background: linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%) !important;
+        border-left: 4px solid #f44336 !important;
+        border-radius: 8px !important;
+    }
+    .stWarning {
+        background: linear-gradient(135deg, #fff9c4 0%, #ffe082 100%) !important;
+        border-left: 4px solid #ffc107 !important;
+        border-radius: 8px !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# ===== データ取得・API関数 =====
+# ===== API関数 =====
 def get_master_data():
     try:
         headers = get_auth_headers(API_URL)
         response = requests.get(f"{API_URL}/master", headers=headers, timeout=10)
         if response.status_code == 200: return response.json()
     except: pass
-    return {'departments': [{'id': 'sales', 'name': '営業部'}, {'id': 'dev', 'name': '開発部'}], 'folders': [{'id': 'f1', 'name': '定例'}]}
+    return {'departments': [{'id': 'sales', 'name': '営業部'}], 'folders': [{'id': 'f1', 'name': '定例'}]}
 
 def get_statistics():
     try:
@@ -354,15 +253,13 @@ def get_statistics():
         response = requests.get(f"{API_URL}/statistics", headers=headers, timeout=10)
         if response.status_code == 200: return response.json()
     except: pass
-    return {'total_count': 0, 'this_month': 0, 'by_department': {}}
+    return {'this_month': 0, 'total_count': 0, 'monthly_history': {}}
 
-def get_history(limit=100):
+def get_history():
     try:
         headers = get_auth_headers(API_URL)
-        response = requests.get(f"{API_URL}/history?limit={limit}", headers=headers, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            return data.get('history', [])
+        response = requests.get(f"{API_URL}/history?limit=50", headers=headers, timeout=10)
+        if response.status_code == 200: return response.json().get('history', [])
     except: pass
     return []
 
@@ -375,358 +272,155 @@ def upload_file_api(file, department, folder):
         return response.json()
     except Exception as e: return {'success': False, 'error': str(e)}
 
-# ===== ヘッダー =====
-st.markdown("""
-    <div class="gijiroku-header">
-        <h1 class="gijiroku-title">GIJIROKU AI</h1>
-        <p class="gijiroku-subtitle">会議録音を自動で文字起こし・議事録化</p>
-    </div>
-""", unsafe_allow_html=True)
+# ===== メイン処理 =====
+st.markdown('<div class="gijiroku-header"><h1>GIJIROKU AI</h1></div>', unsafe_allow_html=True)
 
-# ===== ナビゲーション =====
-current_page = st.session_state.get('page', 'upload')
-
-# タブナビゲーションのスタイル
-st.markdown("""
-<style>
-    div[data-testid="column"]:nth-of-type(1) button {
-        border-radius: 8px 0 0 8px !important;
-    }
-    div[data-testid="column"]:nth-of-type(3) button {
-        border-radius: 0 8px 8px 0 !important;
-    }
-    div[data-testid="column"] button {
-        border-radius: 0 !important;
-        border: none !important;
-        background: white !important;
-        color: #6b7280 !important;
-        font-weight: 500 !important;
-        transition: all 0.2s ease !important;
-    }
-    div[data-testid="column"] button:hover {
-        background: #f3f4f6 !important;
-        color: #374151 !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+if 'page' not in st.session_state: st.session_state.page = "upload"
 
 col1, col2, col3 = st.columns(3)
 with col1:
-    upload_btn = st.button("議事録生成", use_container_width=True, key="nav_upload")
-    if upload_btn:
-        st.session_state.page = "upload"
+    if st.button("議事録生成", use_container_width=True, key="nav_btn_upload"): st.session_state.page = "upload"
 with col2:
-    history_btn = st.button("履歴", use_container_width=True, key="nav_history")
-    if history_btn:
-        st.session_state.page = "history"
+    if st.button("履歴", use_container_width=True, key="nav_btn_history"): st.session_state.page = "history"
 with col3:
-    stats_btn = st.button("統計", use_container_width=True, key="nav_stats")
-    if stats_btn:
-        st.session_state.page = "stats"
+    if st.button("統計", use_container_width=True, key="nav_btn_stats"): st.session_state.page = "stats"
 
-# アクティブなタブのスタイルを適用
-active_tab_style = """
-<style>
-"""
-if current_page == "upload":
-    active_tab_style += """
-    div[data-testid="column"]:nth-of-type(1) button {
-        background: #e0f2fe !important;
-        color: #0369a1 !important;
-        font-weight: 600 !important;
-    }
-    """
-elif current_page == "history":
-    active_tab_style += """
-    div[data-testid="column"]:nth-of-type(2) button {
-        background: #e0f2fe !important;
-        color: #0369a1 !important;
-        font-weight: 600 !important;
-    }
-    """
-elif current_page == "stats":
-    active_tab_style += """
-    div[data-testid="column"]:nth-of-type(3) button {
-        background: #e0f2fe !important;
-        color: #0369a1 !important;
-        font-weight: 600 !important;
-    }
-    """
-active_tab_style += "</style>"
-st.markdown(active_tab_style, unsafe_allow_html=True)
+# 選択中タブ強調
+idx = {"upload": 1, "history": 2, "stats": 3}[st.session_state.page]
+st.markdown(f'<style>div[data-testid="column"]:nth-of-type({idx}) button {{ background: #E0F2FE !important; color: #0047AB !important; border: 2px solid #0047AB !important; }}</style>', unsafe_allow_html=True)
 
-# ページ選択（ボタンクリック時は既に設定済み）
-if 'page' not in st.session_state:
-    st.session_state.page = "upload"
-
-# ===== メインコンテンツ =====
 if st.session_state.page == "upload":
     master = get_master_data()
     
-    # 設定カード
     st.markdown('<div class="card"><div class="card-title">設定</div>', unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    with col1:
+    c1, c2 = st.columns(2)
+    with c1:
         st.markdown('<span class="setting-label">部署名</span>', unsafe_allow_html=True)
-        dept_options = {d['name']: d['id'] for d in master['departments']}
-        selected_dept = st.selectbox("", options=list(dept_options.keys()), label_visibility="collapsed", key="dept_select")
-    
-    with col2:
+        dept_map = {d['name']: d['id'] for d in master['departments']}
+        sel_dept = st.selectbox("", options=list(dept_map.keys()), label_visibility="collapsed", key="select_dept")
+    with c2:
         st.markdown('<span class="setting-label">保存先フォルダ</span>', unsafe_allow_html=True)
-        folder_options = {f['name']: f['id'] for f in master['folders']}
-        selected_folder = st.selectbox("", options=list(folder_options.keys()), label_visibility="collapsed", key="folder_select")
-    
-    # 会議シーン/パターン（デフォルト値で追加）
-    st.markdown('<span class="setting-label">会議シーン / パターン</span>', unsafe_allow_html=True)
-    scene_options = ['定例会議', 'プロジェクト会議', '1on1', '全体会議', 'その他']
-    selected_scene = st.selectbox("", options=scene_options, label_visibility="collapsed", key="scene_select")
-    
+        fold_map = {f['name']: f['id'] for f in master['folders']}
+        sel_fold = st.selectbox("", options=list(fold_map.keys()), label_visibility="collapsed", key="select_folder")
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # アップロードエリア
-    st.markdown("""
-    <div class="card">
-        <div class="card-title">音声・動画ファイル</div>
-    </div>
-    <style>
-        .uploadedFile {
-            border: 1px solid #e5e7eb !important;
-            border-radius: 12px !important;
-            padding: 1rem !important;
-            background: white !important;
-        }
-        .uploadedFile:hover {
-            border-color: #3b82f6 !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+    st.markdown('<div class="card"><div class="card-title">音声・動画ファイル</div>', unsafe_allow_html=True)
+    up_file = st.file_uploader("", type=['mp3', 'mp4', 'wav', 'm4a'], label_visibility="collapsed", key="file_uploader_main")
     
-    uploaded_file = st.file_uploader(
-        "",
-        type=['mp3', 'mp4', 'wav', 'm4a', 'mov'],
-        label_visibility="collapsed",
-        help="対応形式: MP3, WAV, M4A, MP4, MOV"
-    )
-    
-    if uploaded_file:
-        st.markdown(f"""
-        <div class="setting-card">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <span style="font-size: 1.5rem;">📄</span>
-                <div>
-                    <div style="font-weight: 600; color: #1a1a1a; margin-bottom: 0.25rem;">{uploaded_file.name}</div>
-                    <div style="font-size: 0.875rem; color: #6b7280;">ファイルが選択されました</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
-        <style>
-            .stButton > button {
-                background: #3b82f6 !important;
-                color: white !important;
-                border: none !important;
-                border-radius: 10px !important;
-                padding: 0.875rem 2rem !important;
-                font-size: 1rem !important;
-                font-weight: 600 !important;
-                transition: all 0.2s ease !important;
-                box-shadow: 0 2px 4px rgba(59,130,246,0.2) !important;
-            }
-            .stButton > button:hover {
-                background: #2563eb !important;
-                box-shadow: 0 4px 8px rgba(59,130,246,0.3) !important;
-                transform: translateY(-1px) !important;
-            }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        col1, col2, col3 = st.columns([1, 1, 2])
-        with col2:
-            if st.button("議事録生成", type="primary", use_container_width=True):
-                with st.spinner("処理中..."):
-                    result = upload_file_api(uploaded_file, dept_options[selected_dept], folder_options[selected_folder])
-                    if result.get('success'):
-                        st.markdown("""
-                        <div class="setting-card" style="background: #dbeafe; border-color: #3b82f6;">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <span style="font-size: 1.5rem;">✅</span>
-                                <div>
-                                    <div style="font-weight: 600; color: #1e40af; margin-bottom: 0.25rem;">議事録の生成が完了しました</div>
-                                    <div style="font-size: 0.875rem; color: #1e3a8a;">
-                                        {link}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        """.format(link=f'<a href="{result.get("doc_url")}" target="_blank" class="history-link">📄 議事録を表示</a>' if result.get('doc_url') else ''), unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""
-                        <div class="setting-card" style="background: #fee2e2; border-color: #ef4444;">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <span style="font-size: 1.5rem;">❌</span>
-                                <div>
-                                    <div style="font-weight: 600; color: #991b1b; margin-bottom: 0.25rem;">エラーが発生しました</div>
-                                    <div style="font-size: 0.875rem; color: #7f1d1d;">{result.get('error', '不明なエラー')}</div>
-                                </div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
+    # 議事録生成ボタンを常時表示
+    st.markdown('<div style="margin-top: 1.5rem;"></div>', unsafe_allow_html=True)
+    if st.button("🚀 議事録を生成開始", type="primary", use_container_width=True, key="execute_gen_btn"):
+        if not up_file:
+            st.warning("⚠️ ファイルをアップロードしてください。")
+        else:
+            with st.spinner("⏳ 処理中...しばらくお待ちください"):
+                result = upload_file_api(up_file, dept_map[sel_dept], fold_map[sel_fold])
+                if result.get('success'):
+                    st.success("✅ 完了しました。履歴を確認してください。")
+                    if result.get('doc_url'):
+                        st.markdown(f'<a href="{result.get("doc_url")}" target="_blank" style="font-size: 1rem; font-weight: 600;">📄 議事録を表示</a>', unsafe_allow_html=True)
+                else:
+                    st.error(f"❌ エラーが発生しました: {result.get('error')}")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 elif st.session_state.page == "history":
-    history = get_history()
-    
-    if history:
-        for item in history:
-            status = item.get('status', '処理中')
-            if status == '完了':
-                status_class = "status-completed"
-                status_text = "完了"
-            elif 'エラー' in status or 'error' in status.lower():
-                status_class = "status-error"
-                status_text = "エラー"
-            else:
-                status_class = "status-processing"
-                status_text = "処理中"
-            
-            file_name = item.get('file', 'N/A')
-            date_str = item.get('date', 'N/A')
-            department = item.get('department', 'N/A')
-            folder = item.get('folder', 'N/A')
-            doc_url = item.get('doc_url', '')
-            
-            # 日付をフォーマット
-            try:
-                if ' ' in date_str:
-                    date_part, time_part = date_str.split(' ', 1)
-                    formatted_date = f"{date_part} {time_part[:5]}"
-                else:
-                    formatted_date = date_str
-            except:
-                formatted_date = date_str
-            
-            st.markdown(f"""
-            <div class="history-card">
-                <div class="history-file-name">{file_name}</div>
-                <div class="history-meta">
-                    <span class="history-meta-item">🏢 {department}</span>
-                    <span class="history-meta-item">📁 {folder}</span>
-                    <span class="history-meta-item">📅 {formatted_date}</span>
-                </div>
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem;">
-                    <span class="status-badge {status_class}">{status_text}</span>
-                    <div style="display: flex; gap: 1rem;">
-                        {f'<a href="{doc_url}" target="_blank" class="history-link">表示</a>' if doc_url else ''}
-                        {f'<a href="{doc_url}" target="_blank" class="history-link">ダウンロード</a>' if doc_url else ''}
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-    else:
+    hist = get_history()
+    if not hist:
         st.markdown("""
-        <div class="empty-state">
-            <div class="empty-state-icon">📋</div>
-            <div style="font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem;">履歴がありません</div>
-            <div style="font-size: 0.875rem;">議事録を生成すると、ここに履歴が表示されます</div>
+        <div class="card" style="text-align: center; padding: 3rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+            <div style="font-size: 1.2rem; font-weight: 600; color: #667eea; margin-bottom: 0.5rem;">履歴がありません</div>
+            <div style="color: #6b7280;">議事録を生成すると、ここに履歴が表示されます</div>
         </div>
         """, unsafe_allow_html=True)
+    else:
+        for item in hist:
+            status = item.get('status', '処理中')
+            if status == '完了':
+                s_class = "status-completed"
+            elif "エラー" in status or "error" in status.lower():
+                s_class = "status-error"
+            else:
+                s_class = "status-processing"
+                st.markdown("""
+                <style>
+                .status-processing {
+                    background: linear-gradient(135deg, #fff9c4 0%, #ffe082 100%);
+                    color: #856404;
+                    box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);
+                }
+                </style>
+                """, unsafe_allow_html=True)
+            
+            doc_url = item.get('doc_url', '')
+            link_html = f'<a href="{doc_url}" target="_blank" style="margin-left: 1rem; padding: 0.4rem 0.8rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; text-decoration: none; font-weight: 600;">📄 表示</a>' if doc_url else ""
+            
+            st.markdown(f'''
+            <div class="card">
+                <div style="font-weight:700; font-size:1.1rem; color:#1a1a1a; margin-bottom:0.75rem;">📄 {item.get("file", "N/A")}</div>
+                <div style="color:#6b7280; font-size:0.9rem; margin-bottom:0.75rem;">
+                    🏢 {item.get("department", "N/A")} | 📁 {item.get("folder", "N/A")} | 📅 {item.get("date", "N/A")}
+                </div>
+                <div style="display: flex; align-items: center;">
+                    <span class="status-badge {s_class}">{status}</span>
+                    {link_html}
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
 
 elif st.session_state.page == "stats":
     stats = get_statistics()
     
-    # 統計カード
+    # KPIカード
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-label">今月のアップロード</div>
-            <div class="stat-value">{stats.get('this_month', 0)}</div>
-            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">ファイル</div>
-            <div class="stat-change">+12% 前月比</div>
+        <div class="card" style="text-align: center; background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #0369a1; margin-bottom: 0.5rem; text-transform: uppercase;">今月のアップロード</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #0c4a6e; margin: 0.5rem 0;">{stats.get('this_month', 0)}</div>
+            <div style="font-size: 0.85rem; color: #0369a1;">ファイル</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-label">総文字起こし時間</div>
-            <div class="stat-value">18.5</div>
-            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">時間</div>
-            <div class="stat-change">+8% 前月比</div>
+        <div class="card" style="text-align: center; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #92400e; margin-bottom: 0.5rem; text-transform: uppercase;">総文字起こし時間</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #78350f; margin: 0.5rem 0;">18.5</div>
+            <div style="font-size: 0.85rem; color: #92400e;">時間</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col3:
         st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-label">完了済み</div>
-            <div class="stat-value">{stats.get('completed_count', stats.get('total_count', 0))}</div>
-            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">ファイル</div>
-            <div class="stat-change">+15% 前月比</div>
+        <div class="card" style="text-align: center; background: linear-gradient(135deg, #dbeafe 0%, #93c5fd 100%);">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #1e40af; margin-bottom: 0.5rem; text-transform: uppercase;">完了済み</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #1e3a8a; margin: 0.5rem 0;">{stats.get('total_count', 0)}</div>
+            <div style="font-size: 0.85rem; color: #1e40af;">ファイル</div>
         </div>
         """, unsafe_allow_html=True)
     
     with col4:
         st.markdown(f"""
-        <div class="stat-card">
-            <div class="stat-label">使用中のフォルダー</div>
-            <div class="stat-value">{stats.get('active_folders', 8)}</div>
-            <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">フォルダー</div>
+        <div class="card" style="text-align: center; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);">
+            <div style="font-size: 0.75rem; font-weight: 700; color: #4338ca; margin-bottom: 0.5rem; text-transform: uppercase;">使用中フォルダー</div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #312e81; margin: 0.5rem 0;">8</div>
+            <div style="font-size: 0.85rem; color: #4338ca;">フォルダー</div>
         </div>
         """, unsafe_allow_html=True)
     
-    # 部門別利用状況
-    st.markdown('<div class="section-title">部門別利用状況</div>', unsafe_allow_html=True)
-    
-    dept_stats = stats.get('by_department', {})
-    if dept_stats:
-        df = pd.DataFrame([
-            {'部門': dept, '利用回数': count}
-            for dept, count in dept_stats.items()
-        ])
-        
-        # 淡い青系で統一
-        fig = px.bar(
-            df,
-            x='部門',
-            y='利用回数',
-            text='利用回数',
-            labels={'利用回数': '利用回数', '部門': '部門'},
-            color='利用回数',
-            color_continuous_scale=['#e0f2fe', '#3b82f6']
-        )
-        fig.update_traces(
-            textposition='outside',
-            marker_line_color='#3b82f6',
-            marker_line_width=1
-        )
-        fig.update_layout(
-            showlegend=False,
-            height=400,
-            xaxis_title="",
-            yaxis_title="",
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            font=dict(size=12),
-            margin=dict(l=0, r=0, t=20, b=0)
-        )
-        fig.update_xaxes(showgrid=False)
-        fig.update_yaxes(showgrid=True, gridcolor='#f0f0f0')
-        
-        st.markdown('<div class="card" style="padding: 1.5rem;">', unsafe_allow_html=True)
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    # 月別統計
+    st.markdown('<div class="card"><div class="card-title">月別処理ファイル数</div>', unsafe_allow_html=True)
+    m_hist = stats.get('monthly_history', {})
+    if m_hist:
+        df = pd.DataFrame([{'年月': k, '件数': v} for k, v in m_hist.items()])
+        st.dataframe(df, use_container_width=True, hide_index=True)
     else:
         st.markdown("""
-        <div class="empty-state">
-            <div class="empty-state-icon">📊</div>
-            <div style="font-size: 1rem; font-weight: 500; margin-bottom: 0.5rem;">データがありません</div>
-            <div style="font-size: 0.875rem;">議事録を生成すると、統計データが表示されます</div>
+        <div style="text-align: center; padding: 2rem; color: #6b7280;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+            <div>データがありません</div>
         </div>
         """, unsafe_allow_html=True)
-
-# フッター
-st.markdown('<div class="footer">© 2026 GIJIROKU AI - DX推進プラットフォーム</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
